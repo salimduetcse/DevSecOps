@@ -1,0 +1,34 @@
+# Workflow 10: Scheduled Trigger (Cron)
+# Purpose: Run workflow automatically on a schedule (like a cron job).
+# Schedule below: every day at 09:00 UTC
+# Cron format: minute hour day-of-month month day-of-week
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Schedule Trigger Demo
+
+on:
+  # Also allow manual run for testing (schedules are hard to wait for)
+  workflow_dispatch:
+
+  schedule:
+    # Runs at 09:00 UTC every day
+    # Tip: use https://crontab.guru to build cron expressions
+    - cron: "0 9 * * *"
+
+jobs:
+  scheduled-task:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show schedule run info
+        run: |
+          echo "Workflow triggered by SCHEDULE (or manual dispatch)"
+          echo "Current UTC time = $(date -u)"
+          echo "This could be a nightly backup, report, or health check."
+
+      - name: Simulate nightly maintenance
+        run: |
+          echo "Running scheduled maintenance task..."
+          echo "Cleaning temp files..."
+          echo "Generating daily report..."
+          echo "Scheduled task complete."

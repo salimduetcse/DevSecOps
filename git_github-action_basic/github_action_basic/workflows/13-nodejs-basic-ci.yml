@@ -1,0 +1,58 @@
+# Workflow 13: Node.js Basic CI
+# Purpose: Standard Node.js CI — checkout, setup-node, npm install, npm test.
+# This workflow creates a minimal Node.js project inline for learning.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Node.js Basic CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  nodejs-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Create sample Node.js app and test (for demo)
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "student-demo-app",
+            "version": "1.0.0",
+            "scripts": {
+              "test": "node test.js"
+            }
+          }
+          EOF
+          cat > math.js << 'EOF'
+          function add(a, b) {
+            return a + b;
+          }
+          module.exports = { add };
+          EOF
+          cat > test.js << 'EOF'
+          const { add } = require('./math');
+          if (add(2, 3) !== 5) {
+            console.error('Test failed: add(2,3) should be 5');
+            process.exit(1);
+          }
+          console.log('All tests passed!');
+          EOF
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test

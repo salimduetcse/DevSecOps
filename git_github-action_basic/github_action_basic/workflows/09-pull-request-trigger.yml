@@ -1,0 +1,40 @@
+# Workflow 09: Pull Request Trigger
+# Purpose: Run workflow when a PR is opened, updated, or reopened.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+# Test: Create a feature branch, push, open a Pull Request to main.
+
+name: Pull Request Trigger Demo
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize   # new commits pushed to PR branch
+      - reopened
+
+jobs:
+  pr-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Show PR event details
+        run: |
+          echo "Workflow triggered by a PULL REQUEST event"
+          echo "PR Number   = ${{ github.event.pull_request.number }}"
+          echo "PR Title    = ${{ github.event.pull_request.title }}"
+          echo "Source      = ${{ github.head_ref }}"
+          echo "Target      = ${{ github.base_ref }}"
+          echo "Author      = ${{ github.event.pull_request.user.login }}"
+
+      - name: Simulate PR validation
+        run: |
+          echo "Running PR checks..."
+          echo "1. Lint check    - passed"
+          echo "2. Unit tests    - passed"
+          echo "3. Security scan - passed"
+          echo "PR is ready for review!"

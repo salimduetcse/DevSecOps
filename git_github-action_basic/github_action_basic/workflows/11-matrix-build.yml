@@ -1,0 +1,43 @@
+# Workflow 11: Matrix Build
+# Purpose: Run the same job across multiple combinations (OS, language versions, etc.)
+# Benefit: Test your app on Python 3.10, 3.11, and 3.12 in one workflow run.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Matrix Build Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  matrix-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # fail-fast: false = continue other matrix jobs even if one fails
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os-label: [ubuntu-latest]
+
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os-label }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Create a simple test script
+        run: |
+          echo "print('Hello from Python ${{ matrix.python-version }}')" > hello.py
+
+      - name: Run the script
+        run: python hello.py
+
+      - name: Verify Python version
+        run: |
+          python --version
+          echo "Matrix job for Python ${{ matrix.python-version }} completed."
