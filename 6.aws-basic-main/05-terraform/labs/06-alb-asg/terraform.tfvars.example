@@ -1,4 +1,0 @@
-aws_profile          = "aws-basic-lab"
-aws_region           = "ap-southeast-1"
-student_name         = "yourname"
-asg_desired_capacity = 2
