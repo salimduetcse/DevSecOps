@@ -1,0 +1,45 @@
+name: Job Step Run Demo
+
+on:
+    workflow_dispatch:
+
+jobs:
+  # Job 1 runs first (jobs in the same workflow run in parallel by default)
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Step 1 - Create a build folder
+        run: mkdir -p build
+
+      - name: Step 2 - Write a file
+        run: echo "Build completed at $(date)" > build/status.txt
+
+      - name: Step 3 - Show file content
+        run: cat build/status.txt
+
+      - name: Step 3 - Show file content
+        run: ls -al build
+
+  # Job 2 runs at the same time as Job 1 (parallel)
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Step 1 - Simulate a test
+        run: echo "Running tests..."
+
+      - name: Step 2 - Fake test pass
+        run: |
+          echo "Test 1 passed"
+          echo "Test 2 passed"
+          echo "All tests passed"
+
+  # Job 3 waits for build AND test to finish (needs = dependency)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: Deploy only after build and test succeed
+        run: echo "Deploying application..."

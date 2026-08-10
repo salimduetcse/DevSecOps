@@ -1,0 +1,112 @@
+name: Docker Build Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print workspace location
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "GitHub workspace:"
+          echo "$GITHUB_WORKSPACE"
+
+      - name: Create sample Dockerfile and code files
+        run: |
+          cat > Dockerfile << 'EOF'
+          FROM python:3.11-slim
+          WORKDIR /app
+          COPY requirements.txt .
+          RUN pip install --no-cache-dir -r requirements.txt
+          COPY app.py .
+          EXPOSE 8000
+          CMD ["python", "app.py"]
+          EOF
+
+          cat > requirements.txt << 'EOF'
+          flask==3.0.0
+          EOF
+
+          cat > app.py << 'EOF'
+          from flask import Flask
+
+          app = Flask(__name__)
+
+          @app.route("/")
+          def hello():
+              return "Hello from Docker!"
+
+          if __name__ == "__main__":
+              app.run(host="0.0.0.0", port=8000)
+          EOF
+
+      - name: List created Docker and code files
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "List all files in repository root:"
+          ls -alrt
+
+          echo ""
+          echo "List Dockerfile:"
+          ls -alrt Dockerfile
+
+          echo ""
+          echo "List requirements.txt:"
+          ls -alrt requirements.txt
+
+          echo ""
+          echo "List app.py:"
+          ls -alrt app.py
+
+          echo ""
+          echo "Show Dockerfile content:"
+          cat Dockerfile
+
+          echo ""
+          echo "Show requirements.txt content:"
+          cat requirements.txt
+
+          echo ""
+          echo "Show app.py content:"
+          cat app.py
+
+      - name: Build Docker image
+        run: |
+          docker build -t student-demo-app:latest .
+          echo "Docker image built successfully."
+
+      - name: Run Docker container and test
+        run: |
+          docker run -d --name demo-app -p 8000:8000 student-demo-app:latest
+
+          echo "Waiting for container to start..."
+          sleep 5
+
+          echo "Testing application:"
+          curl -f http://localhost:8000 || (docker logs demo-app && exit 1)
+
+          echo ""
+          echo "Container is running and responding!"
+
+          echo ""
+          echo "Container status:"
+          docker ps -a
+
+          docker stop demo-app
+          docker rm demo-app
+
+      - name: Show Docker images
+        run: |
+          docker images | grep student-demo-app

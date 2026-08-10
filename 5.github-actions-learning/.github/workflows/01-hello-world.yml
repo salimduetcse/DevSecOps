@@ -1,0 +1,22 @@
+name: Hello World Workflow
+
+on:
+    workflow_dispatch:
+
+jobs:
+  hello:
+    # ubuntu-latest = GitHub-hosted Linux runner virtual machine in the cloud
+    runs-on: ubuntu-latest
+
+    steps:
+      # A step runs a single task. "run" executes a shell command.
+      - name: Print hello message
+        run: echo "Hello from GitHub Actions"
+      - name: Print hello message
+        run: echo "Hello from ntech"
+
+      - name: Print current date
+        run: date
+
+      - name: Print runner OS info
+        run: uname -a
