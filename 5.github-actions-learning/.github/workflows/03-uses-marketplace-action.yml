@@ -1,0 +1,33 @@
+# Workflow 03: Using Marketplace Actions
+# Purpose: Learn "uses" — run pre-built actions from GitHub Marketplace.
+# Key action: actions/checkout@v4 downloads your repository code to the runner.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Marketplace Action Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  checkout-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      # "uses" runs a Marketplace action (reusable automation block)
+      # actions/checkout@v4 = official GitHub action to clone your repo
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: List files in the repository
+        run: ls -la
+
+      - name: List files in the workflow
+        run: ls -la .github/workflows
+
+      - name: Show README first line (if README exists)
+        run: |
+          if [ -f README.md ]; then
+            head -n 3 README.md
+          else
+            echo "No README.md found — add one to your repo!"
+          fi

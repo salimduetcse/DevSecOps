@@ -1,0 +1,35 @@
+# Workflow 05: Repository Variables
+# Purpose: Use variables stored in GitHub repo settings (not secret).
+# Setup: GitHub repo → Settings → Secrets and variables → Actions → Variables
+#        Create a variable named APP_ENV with value "development"
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Repository Variable Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  repo-variable-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Read repository variable
+        # vars.VARIABLE_NAME reads from Settings → Secrets and variables → Actions → Variables
+        # Syntax: ${{ }} is GitHub Actions expression syntax
+        run: |
+          echo "APP_ENV from repository variable = ${{ vars.APP_ENV }}"
+          echo "If empty, create APP_ENV variable in repo Settings first."
+
+      - name: Use variable in a conditional way
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
+        run: |
+          if [ "$APP_ENV" = "production" ]; then
+            echo "Running in PRODUCTION mode"
+          elif [ "$APP_ENV" = "development" ]; then
+            echo "Running in DEVELOPMENT mode"
+          else
+            echo "APP_ENV not set or unknown: $APP_ENV"
+            echo "Defaulting to development mode for this demo"
+          fi

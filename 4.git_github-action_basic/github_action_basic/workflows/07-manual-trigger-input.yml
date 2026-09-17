@@ -1,0 +1,54 @@
+# Workflow 07: Manual Trigger with Inputs
+# Purpose: Run workflow manually and pass user-defined inputs.
+# How to run: Actions tab → Manual Trigger Input Demo → Run workflow → fill inputs
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Manual Trigger Input Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to deploy"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+      app_version:
+        description: "Application version to deploy"
+        required: true
+        default: "1.0.0"
+        type: string
+
+      run_tests:
+        description: "Run tests before deploy?"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  deploy-with-inputs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show received inputs
+        run: |
+          echo "Environment  = ${{ inputs.environment }}"
+          echo "App Version  = ${{ inputs.app_version }}"
+          echo "Run Tests    = ${{ inputs.run_tests }}"
+
+      - name: Run tests (if input is true)
+        if: ${{ inputs.run_tests }}
+        run: echo "Running tests before deploy..."
+
+      - name: Skip tests message
+        if: ${{ !inputs.run_tests }}
+        run: echo "Skipping tests as requested."
+
+      - name: Simulate deploy
+        run: |
+          echo "Deploying version ${{ inputs.app_version }} to ${{ inputs.environment }}..."
+          echo "Deploy complete!"

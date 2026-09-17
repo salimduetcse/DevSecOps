@@ -1,0 +1,25 @@
+# Workflow 01: Hello World
+# Purpose: Your first GitHub Actions workflow — prints a simple message.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Hello World Workflow
+
+# workflow_dispatch = run manually from GitHub UI (Actions tab → Run workflow)
+on:
+  workflow_dispatch:
+
+jobs:
+  hello:
+    # ubuntu-latest = GitHub-hosted Linux runner (virtual machine in the cloud)
+    runs-on: ubuntu-latest
+
+    steps:
+      # A step runs a single task. "run" executes a shell command.
+      - name: Print hello message
+        run: echo "Hello from GitHub Actions"
+
+      - name: Print current date
+        run: date
+
+      - name: Print runner OS info
+        run: uname -a

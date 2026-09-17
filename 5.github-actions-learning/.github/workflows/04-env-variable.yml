@@ -1,0 +1,46 @@
+# Workflow 04: Environment Variables
+# Purpose: Learn env variables at workflow, job, and step levels.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+
+name: Environment Variables Demo
+
+on:
+  workflow_dispatch:
+
+# Workflow-level env: available to ALL jobs and steps
+env:
+  WORKFLOW_ENV: "production"
+  APP_NAME: "student-demo-app"
+
+jobs:
+  env-demo:
+    runs-on: ubuntu-latest
+
+    # Job-level env: available to all steps in this job
+    env:
+      JOB_ENV: "ci-pipeline"
+      BUILD_NUMBER: "1"
+
+    steps:
+      - name: Use workflow and job level variables
+        run: |
+          echo "Workflow env WORKFLOW_ENV = $WORKFLOW_ENV"
+          echo "Workflow env APP_NAME = $APP_NAME"
+          echo "Job env JOB_ENV = $JOB_ENV"
+          echo "Job env BUILD_NUMBER = $BUILD_NUMBER"
+
+      # Step-level env: only available inside this one step
+      - name: Use step level variable
+        env:
+          STEP_ENV: "step-only-value"
+          DEPLOY_TARGET: "staging"
+        run: |
+          echo "Step env STEP_ENV = $STEP_ENV"
+          echo "Step env DEPLOY_TARGET = $DEPLOY_TARGET"
+          echo "Step can still see workflow env APP_NAME = $APP_NAME"
+
+      - name: Set env dynamically for next step
+        run: echo "DYNAMIC_VALUE=hello-from-shell" >> $GITHUB_ENV
+
+      - name: Read dynamically set env in next step
+        run: echo "Dynamic env DYNAMIC_VALUE = $DYNAMIC_VALUE"

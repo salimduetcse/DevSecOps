@@ -1,0 +1,37 @@
+# Workflow 08: Push Trigger
+# Purpose: Automatically run workflow when code is pushed to specific branches.
+# How to use: Copy this file to .github/workflows/ in your GitHub repository.
+# Test: Push any commit to main or develop branch.
+
+name: Push Trigger Demo
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      # Only trigger when these paths change (optional filter)
+      - "**.yml"
+      - "**.py"
+      - "**.js"
+      - "README.md"
+
+jobs:
+  on-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show push event details
+        run: |
+          echo "Workflow triggered by a PUSH event"
+          echo "Branch  = ${{ github.ref_name }}"
+          echo "Commit  = ${{ github.sha }}"
+          echo "Actor   = ${{ github.actor }}"
+          echo "Repo    = ${{ github.repository }}"
+
+      - name: Simulate CI on push
+        run: echo "Running quick checks after push to ${{ github.ref_name }}..."
