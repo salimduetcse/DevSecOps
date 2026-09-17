@@ -1,0 +1,66 @@
+ Step-by-Step Dockerfile + Build + Push + Run
+✅ 1. Create the Dockerfile
+Create a file named Dockerfile:
+
+
+# Base image
+FROM ubuntu:24.04
+
+# Set working directory
+WORKDIR /app
+
+# Install any required packages (optional)
+RUN apt update && apt install -y curl
+
+# Default command: sleep for 3600 seconds
+CMD ["sleep", "3600"]
+✅ 2. Build the Docker image
+
+docker build -t faizul56/ubuntu-sleeper:1.0 .
+Replace myuser with your Docker Hub username if you plan to push it.
+
+✅ 3. Tag the image for Docker Hub
+
+docker tag faizul56/ubuntu-sleeper:1.0 faizul56/ubuntu-sleeper:latest
+✅ 4. Push the image to Docker Hub
+Login first (if not already logged in):
+
+
+docker login
+Then push:
+
+
+docker push myuser/ubuntu-sleeper:1.0
+docker push myuser/ubuntu-sleeper:latest
+
+🚀 Run the container with storage options
+✅ 5. Run container with a Docker named volume
+
+docker volume create sleeper-vol
+
+docker run -d \
+  --name sleeper-vol-container \
+  -v sleeper-vol:/data \
+  faizul56/ubuntu-sleeper:1.0
+✔️ Mounts the volume at /data inside the container.
+
+✅ 6. Run container with a bind mount
+Create a host directory:
+
+
+mkdir -p ~/sleeper-bind
+Then run the container:
+
+
+docker run -d \
+  --name sleeper-bind-container \
+  -v ~/sleeper-bind:/app/logs \
+  faizul56/ubuntu-sleeper:1.0
+✔️ Mounts the host path ~/sleeper-bind to /app/logs inside the container.
+
+✅ 7. Verify Volumes and Containers
+
+docker ps
+docker volume ls
+docker inspect sleeper-vol-container
+docker inspect sleeper-bind-container

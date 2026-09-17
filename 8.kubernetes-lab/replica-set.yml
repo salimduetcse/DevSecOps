@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: cefalo-test
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: cefalo-app
+      type: front-end
+  template:
+    metadata:
+      labels:
+        app: cefalo-app
+        type: front-end
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx

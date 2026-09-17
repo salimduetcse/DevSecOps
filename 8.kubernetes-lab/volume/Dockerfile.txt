@@ -1,0 +1,11 @@
+# Base image
+FROM ubuntu:24.04
+
+# Set working directory
+WORKDIR /app
+
+# Install any required packages (optional)
+RUN apt update && apt install -y curl
+
+# Default command: sleep for 3600 seconds
+CMD ["sleep", "3600"]

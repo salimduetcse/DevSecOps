@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: cefalo-test
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  replicas: 2
+  selector:
+    app: cefalo-app
+    type: front-end
+  template:
+    metadata:
+      labels:
+        app: cefalo-app
+        type: front-end
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx

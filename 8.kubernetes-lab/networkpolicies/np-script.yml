@@ -1,0 +1,167 @@
+
+----------------------------------------------------
+
+kubectl create namespace test-np
+
+
+
+------------------------------------------------
+create 2 pod in default ns
+
+------------------------------------------------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default1
+  labels:
+    app: default1
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sleep", "3600"]
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default2
+  labels:
+    app: default2
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sleep", "3600"]
+    
+    
+    
+ ------------------------------------------------------
+ 
+ create 2 pod in test-np namespace
+ 
+ ---------------------------------------------
+ 
+ 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-np-1
+  namespace: test-np
+  labels:
+    app: test-np-1
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sleep", "3600"]
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-np-2
+  namespace: test-np
+  labels:
+    app: test-np-2
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sleep", "3600"]
+    
+    
+    
+ ------------------------------------------------------------------------
+ deny all
+ 
+ ------------------------------------------------------------------------
+ 
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: test-np
+spec:
+  podSelector: {}  # Applies to all pods in test-np namespace
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  
+  --------------------------------------------
+  allow default1
+  
+  -------------------------------------------------------------------
+  
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-default1
+  namespace: test-np
+spec:
+  podSelector: {}  # Applies to all pods in test-np namespace
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default  # Allow from default namespace
+      podSelector:
+        matchLabels:
+          app: default1  # But only allow default1
+          
+          
+          
+-------------------------------------------------------------
+apply np only in test-np-1
+
+--------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-default1
+  namespace: test-np
+spec:
+  podSelector:
+    matchLabels:
+      app: test-np-1  # 🎯 Applies only to this pod
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+      podSelector:
+        matchLabels:
+          app: default1  # ✅ Allow only from this pod in default namespace
+
+
+
+✅ Verify Initial Isolation (default & test-np Cannot Communicate)
+
+kubectl exec -it default1 -- ping -c 3 test-np-1.test-np.svc.cluster.local
+kubectl exec -it test-np-1 -n test-np -- ping -c 3 default1.default.svc.cluster.local
+Expected Output: Timeout (No Response), meaning cross-namespace isolation works.
+✅ Test default1 Can Ping test-np-1 & test-np-2
+
+kubectl exec -it default1 -- ping -c 3 test-np-1.test-np.svc.cluster.local
+kubectl exec -it default1 -- ping -c 3 test-np-2.test-np.svc.cluster.local
+Expected Output: Ping successful (Allowed by Network Policy).
+❌ Test default2 Cannot Ping test-np-1 & test-np-2
+
+kubectl exec -it default2 -- ping -c 3 test-np-1.test-np.svc.cluster.local
+kubectl exec -it default2 -- ping -c 3 test-np-2.test-np.svc.cluster.local
+
+
+
+--------------------------------------------------------
+namespace labels
+------------------------------------------
+
+kubectl get ns --show-labels
+

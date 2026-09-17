@@ -1,0 +1,158 @@
+
+
+
+want to provide the following config to your app:
+--------------------------------------------------------
+
+APP_MODE=production
+APP_VERSION=1.0.0
+
+
+
+Step 1: Create the ConfigMap
+------------------------------
+
+Option A: Create from a file
+First, make a file named app-config.env:
+
+APP_MODE=production
+APP_VERSION=1.0.0
+
+
+
+kubectl create configmap app-config-file --from-env-file=app-config.env
+
+
+
+
+ Option B: Create from literal values
+ ---------------------------------------
+ 
+ kubectl create configmap app-config-literel \
+  --from-literal=APP_MODE=production \
+  --from-literal=APP_VERSION=1.0.0
+  
+  
+  
+  
+  
+  kubectl get configmap app-config-file -o yaml
+  
+  kubectl get configmap app-config-literel -o yaml
+  
+  
+  
+  Step 2: Use ConfigMap in a Pod (as env vars)
+   Here’s a pod manifest pod-env.yaml:
+
+
+-----------------------------------------------------------------
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sh", "-c", "env; sleep 3600"]
+    envFrom:
+    - configMapRef:
+        name: app-config-file
+
+
+
+
+-----------------------------------------------------------
+
+
+Checking
+
+
+-----------------------------------------
+
+kubectl exec -it demo-pod -- env | grep APP_
+
+
+---------------------------------------------------
+
+
+  Step 2: Use ConfigMap in a Pod (as single env-configMapKeyRef)
+   Here’s a pod manifest pod-env.yaml:
+   
+   
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sh", "-c", "env; sleep 3600"]
+    env:
+    - name: APP_MODE
+      valueFrom:
+        configMapKeyRef:
+          name: app-config-literel
+          key: APP_MODE
+    - name: APP_VERSION
+      valueFrom:
+        configMapKeyRef:
+          name: app-config-literel
+          key: APP_VERSION
+
+
+---------------------------------------------------------------
+
+
+Checking
+
+
+-----------------------------------------
+
+kubectl exec -it demo-pod -- env | grep APP_
+
+
+-------------------------------------------------
+
+
+Step 3: Use ConfigMap as a mounted file
+
+-------------------------------------------------------------
+
+
+
+Here’s a pod manifest pod-vol.yaml that mounts the config:
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod-vol
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sh", "-c", "cat /config/APP_MODE; sleep 3600"]
+    volumeMounts:
+    - name: config-vol
+      mountPath: /config
+  volumes:
+  - name: config-vol
+    configMap:
+      name: app-config-literel
+
+
+
+--------------------------------------------------------------
+
+Checking
+
+
+-----------------------------------------
+
+kubectl exec -it demo-pod-vol -- cat /config/APP_MODE

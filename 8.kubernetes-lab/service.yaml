@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cefalo-test
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: cefalo-app
+      type: front-end
+  template:
+    metadata:
+      labels:
+        app: cefalo-app
+        type: front-end
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.21.3
+
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cefalo-test-service
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  selector:
+    app: cefalo-app
+    type: front-end
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30008

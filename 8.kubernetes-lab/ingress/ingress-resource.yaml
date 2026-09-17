@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cefalo-test-ingress
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  ingressClassName: nginx
+  defaultBackend:
+    service:
+      name: cefalo-test-service
+      port:
+        number: 80

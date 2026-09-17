@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cefalo-app
+  labels:
+    app: cefalo-app
+    type: front-end
+spec:
+  containers:
+  - name: cefalo-app
+    image: nginx

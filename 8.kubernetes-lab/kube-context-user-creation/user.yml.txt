@@ -1,0 +1,109 @@
+
+
+Generate a Client Certificate for the Developer User
+Kubernetes authentication typically uses certificates. We'll create a certificate and key for the user.
+
+Step 1.1: Create a Private Key for the User
+
+openssl genrsa -out developer.key 2048
+Step 1.2: Create a Certificate Signing Request (CSR)
+
+openssl req -new -key developer.key -out developer.csr -subj "/CN=developer/O=developers"
+/CN=developer → Common Name (username in Kubernetes)
+/O=developers → Organization (Group) (useful for RBAC)
+Step 1.3: Sign the CSR with Kubernetes CA
+Get your Kubernetes CA certificate and key (found in /etc/kubernetes/pki/ on the control plane node):
+
+
+sudo cp /etc/kubernetes/pki/ca.crt .
+sudo cp /etc/kubernetes/pki/ca.key .
+Sign the CSR:
+
+
+openssl x509 -req -in developer.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out developer.crt -days 365
+This generates a signed certificate (developer.crt) valid for 365 days.
+2️⃣ Configure Kubernetes Context for the Developer User
+Now, add the developer user to your Kubernetes config.
+
+Step 2.1: Add the User to Kubeconfig
+
+kubectl config set-credentials developer --client-certificate=developer.crt --client-key=developer.key --embed-certs=true
+Step 2.2: Add a Context for the Developer User
+
+kubectl config set-context developer-context --cluster=<YOUR_CLUSTER_NAME> --user=developer
+Replace <YOUR_CLUSTER_NAME> with the actual name from:
+
+kubectl config get-clusters
+Step 2.3: Switch to the Developer Context
+
+kubectl config use-context developer-context
+
+Create an RBAC Role & RoleBinding for Pod Permissions
+Now, we grant developer access to all pod operations.
+
+Step 3.1: Create a Role with Full Access to Pods
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-admin
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+Save this as role.yaml and apply it:
+
+
+kubectl apply -f role.yaml
+Step 3.2: Bind the Role to the Developer User
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: default
+  name: developer-pod-binding
+subjects:
+- kind: User
+  name: developer
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-admin
+  apiGroup: rbac.authorization.k8s.io
+Save this as rolebinding.yaml and apply it:
+
+
+kubectl apply -f rolebinding.yaml
+Test the Developer User Access
+Switch to the developer context:
+
+
+kubectl config use-context developer-context
+
+
+kubectl auth can-i list pods
+kubectl auth can-i delete pods
+Both should return "yes".
+
+Check Forbidden Actions
+
+kubectl auth can-i list deployments
+This should return "no" since the user only has access to pods.
+
+Test Pod Actions
+
+kubectl get pods
+kubectl run test-pod --image=nginx
+kubectl delete pod test-pod
+The user should be able to list, create, and delete pods.
+
+
+Removing Access (Cleanup)
+If you want to remove the developer user, run:
+
+kubectl delete rolebinding developer-pod-binding -n default
+kubectl delete role pod-admin -n default
+kubectl config delete-context developer-context
+kubectl config delete-user developer
+rm developer.key developer.csr developer.crt

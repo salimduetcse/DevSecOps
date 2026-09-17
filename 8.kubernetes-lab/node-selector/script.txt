@@ -1,0 +1,44 @@
+kubectl label nodes worker node-type=worker
+
+
+
+kubectl get nodes --show-labels
+
+
+nginx-on-worker.yaml
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-on-worker
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        node-type: worker
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+		
+		
+		
+		
+		
+------------------------------------------------
+
+kubectl label node worker node-type-
+
+kubectl get nodes --show-labels
+

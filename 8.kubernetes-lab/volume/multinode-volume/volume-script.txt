@@ -1,0 +1,91 @@
+Get node names:
+
+
+kubectl get nodes
+
+
+
+ Step 2: Prepare the PV (with nodeAffinity)
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: demo-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: demo-storage
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - worker-1  # Replace with your actual node name
+		  
+		  
+		  
+Also run this on the selected node:
+
+sudo mkdir -p /mnt/data && sudo chmod 777 /mnt/data
+
+
+
+Step 3: StorageClass (no-provisioner)
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: demo-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+
+
+
+Step 4: PVC (same as before)
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: demo-storage
+  
+  
+  
+  
+  
+  
+Step 5: Pod (with nodeSelector to match the PV)
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-demo-pod
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-1  # Must match PV nodeAffinity
+  containers:
+  - name: app
+    image: busybox
+    command: ["sh", "-c", "echo Hello from volume! > /data/hello.txt && sleep 3600"]
+    volumeMounts:
+    - name: volume-storage
+      mountPath: /data
+  volumes:
+  - name: volume-storage
+    persistentVolumeClaim:
+      claimName: demo-pvc
+  

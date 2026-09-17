@@ -1,0 +1,57 @@
+kubectl taint nodes <NODE_NAME> key=value:effect
+
+
+worker
+
+
+kubectl taint nodes my-node app=special:NoSchedule
+
+kubectl taint nodes worker app=special:NoSchedule
+
+kubectl describe node worker | grep Taint
+
+
+
+-----------------------------
+
+
+Kubernetes Deployment YAML
+
+vi toleration-deployment.yaml
+
+------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toleration-example
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "special"
+        effect: "NoSchedule"
+      containers:
+      - name: nginx
+        image: nginx
+------------------------------------------------
+
+kubectl apply -f toleration-deployment.yaml
+
+
+----------------------------------------
+
+Remove the Taint (Stop Taints & Toleration)
+
+----------------------------------------
+
+kubectl taint nodes my-node app=special:NoSchedule-

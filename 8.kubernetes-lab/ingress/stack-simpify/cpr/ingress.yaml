@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-nginxapp1
+  labels:
+    app: app1-nginx
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:           
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port: 
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port: 
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app3-nginx-nodeport-service
+                port: 
+                  number: 80                   

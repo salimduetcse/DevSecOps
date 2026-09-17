@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod
+spec:
+  containers:
+  - name: sample-container
+    image: nginx
+    volumeMounts:
+    - name: my-persistent-storage
+      mountPath: /data
+  volumes:
+  - name: my-persistent-storage
+    persistentVolumeClaim:
+      claimName: myclaim

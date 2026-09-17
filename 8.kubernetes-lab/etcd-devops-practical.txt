@@ -1,0 +1,236 @@
+
+
+install all dependencies
+-------------------------------------
+apt-get -y install wget
+
+
+
+mkdir /root/binaries
+cd /root/binaries
+
+
+install etcd binaries
+--------------------------
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
+tar -xzvf etcd-v3.5.4-linux-amd64.tar.gz
+cd etcd-v3.5.4-linux-amd64
+cp etcd etcdctl /usr/local/bin/
+
+
+
+Start ETCD from CLI
+-------------------
+
+etcd
+
+
+Verification - Adding and Removing Data to ETCD
+
+-----------------------------------------------------
+
+
+etcdctl put course "etcd-ourse cefalo devops"
+
+
+ etcdctl get course
+ 
+ 
+ 
+ checking insecure data within etcd
+ --------------------------------------
+ cd /root/binaries/etcd-v3.5.4-linux-amd64/default.etcd
+ etcdctl put course "etcd-ourse cefalo devops"
+ grep -R "cefalo" 	
+ 
+ 
+ cat member/wal/0000000000000000-0000000000000000.wal
+ 
+ 
+ 
+capture etcd data from network
+ 
+--------------------------------------
+
+open a new window in server
+
+tcpdump -i lo -X  port 2379
+
+
+
+
+create certificate authority for etcd and other kubernetes componenet step by step
+--------------------------------------------------------------------------------------
+
+Step 1 - Creating a private key for Certificate Authority:
+
+mkdir /root/certificates
+cd /root/certificates
+
+openssl genrsa -out ca.key 2048
+
+Step 2 - Creating CSR:
+
+openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
+
+Step 3 - Self-Sign the CSR:
+
+openssl x509 -req -in ca.csr -signkey ca.key -CAcreateserial  -out ca.crt -days 1000
+
+Step 4 - Remove the CSR
+
+rm -f ca.csr
+
+
+
+ETCD In-Transit Encryption with HTTPS
+-----------------------------------------
+
+Step 1 - Install utilities
+apt-get -y install tcpdump net-tools
+
+Step 2 - Capture Plain Text ETCD Traffic
+First tab:
+
+cd /root/binaries/etcd-v3.5.4-linux-amd64
+etcd
+
+Second tab:
+
+
+tcpdump -i lo -X  port 2379
+
+Third tab:
+
+etcdctl put course "cks"
+etcdctl get course
+
+Step 2 - Creating the ETCD Certificate Key:
+
+cd /root/certificates
+openssl genrsa -out etcd.key 2048
+
+Step 3 - Find the IP of your server
+
+ifconfig
+Step 4 - Creating Configuration for ETCD CSR:
+
+cat > etcd.cnf <<EOF
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+[alt_names]
+IP.1 = 170.64.158.78
+IP.2 = 127.0.0.1
+EOF
+Step 4 - Creating CSR:
+
+openssl req -new -key etcd.key -subj "/CN=etcd" -out etcd.csr -config etcd.cnf
+
+Step 4 - Signing CSR with Certificate Authority Certificate:
+
+openssl x509 -req -in etcd.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd.crt -extensions v3_req -extfile etcd.cnf -days 1000
+
+
+Step 5 - Start ETCD Server with Certificates:
+
+etcd --cert-file=/root/certificates/etcd.crt --key-file=/root/certificates/etcd.key --advertise-client-urls=https://127.0.0.1:2379 --listen-client-urls=https://127.0.0.1:2379
+
+
+Step 6 - Verify
+
+etcdctl put course2 "cks2"
+
+Run TCPDUMP to capture Traffic:
+
+tcpdump -i lo -X  port 2379
+
+Step 6 -
+
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --insecure-skip-tls-verify  --insecure-transport=false put course9 "cks9"
+
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --insecure-skip-tls-verify  --insecure-transport=false get course2
+
+
+
+Client authentication in ETCD
+------------------------------------
+
+Step 1 - Generate Client Certificate and Client Key:
+
+cd /root/certificates
+openssl genrsa -out client.key 2048
+
+openssl req -new -key client.key -subj "/CN=client" -out client.csr
+
+
+openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -extensions v3_req  -days 1000
+
+
+Step 2 - Start ETCD Server:
+
+
+etcd --cert-file=/root/certificates/etcd.crt --key-file=/root/certificates/etcd.key --advertise-client-urls=https://127.0.0.1:2379 --client-cert-auth --trusted-ca-file=/root/certificates/ca.crt  --listen-client-urls=https://127.0.0.1:2379
+
+Step 3 - Authenticate with Certificates:
+
+
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --insecure-skip-tls-verify  --insecure-transport=false --cert /root/certificates/client.crt --key /root/certificates/client.key put course3 "cks3"
+
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --insecure-skip-tls-verify  --insecure-transport=false --cert /root/certificates/client.crt --key /root/certificates/client.key get course3
+
+
+
+
+
+Creating ETCD Systemd unit
+-------------------------------------------------------------------
+
+Step 1: Create Data Directory for ETCD
+
+mkdir /var/lib/etcd
+chmod 700 /var/lib/etcd
+
+Step 2: Created Systemd file for ETCD
+
+cat <<EOF | sudo tee /etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+
+[Service]
+ExecStart=/usr/local/bin/etcd \\
+  --cert-file=/root/certificates/etcd.crt \\
+  --key-file=/root/certificates/etcd.key \\
+  --trusted-ca-file=/root/certificates/ca.crt \\
+  --client-cert-auth \\
+  --listen-client-urls https://127.0.0.1:2379 \\
+  --advertise-client-urls https://127.0.0.1:2379 \\
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+Step 3: Start ETCD
+
+systemctl start etcd
+
+Step 4: Verify the status
+
+systemctl status etcd
+
+Step 5: Check ETCD Logs
+
+journalctl -u etcd
+
+systemctl restart systemd-journald.service
+

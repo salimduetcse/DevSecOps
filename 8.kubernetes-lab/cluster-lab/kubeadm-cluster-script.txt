@@ -1,0 +1,254 @@
+
+HW specification
+-----------------------------------------------------------
+
+master:t2.large (2 VCPU/8GB RAM/50GB storage)
+worker:t2.large (2 VCPU/8GB RAM/50GB storage)
+
+master:54.88.44.133/172.31.37.65
+worker:23.22.102.204/172.31.43.160
+
+
+OS:ubuntu 24.04 2 vm will be on same network.
+
+
+sudo hostnamectl set-hostname master
+sudo hostnamectl set-hostname worker
+
+
+
+sudo vi /etc/hosts
+
+
+172.31.37.65 master
+172.31.43.160 worker
+
+hostname
+
+
+
+
+sudo hostnamectl set-hostname master
+echo "preserve_hostname: true" | sudo tee -a /etc/cloud/cloud.cfg
+
+
+sudo hostnamectl set-hostname worker
+echo "preserve_hostname: true" | sudo tee -a /etc/cloud/cloud.cfg
+
+---------------------------------------------------------------------
+
+prerequisite
+
+-----------------------------------------------------------------
+
+## Prerequisites
+- At least two Ubuntu 24.04 LTS servers with 2GB RAM and 2 CPU cores each
+- Network connectivity between servers
+- Root access to each server
+
+------------------------------------------------------------------------
+## Installation Steps
+
+
+Update the system and install dependencies:
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install apt-transport-https curl -y
+
+
+
+
+Install containerd:
+----------------------------------
+
+sudo apt install containerd -y
+
+
+
+Configure containerd:
+---------------------------
+
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+sudo systemctl restart containerd
+
+
+Install Kubernetes components:
+------------------------------------
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt update
+sudo apt install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+
+
+Disable swap:
+------------------
+
+sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+
+Load necessary kernel modules:
+------------------------------
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+echo br_netfilter | sudo tee /etc/modules-load.d/br_netfilter.conf
+
+Set required sysctl parameters:
+---------------------------
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+
+sudo sysctl --system
+
+
+Verify bridge settings:
+----------------------------
+
+sysctl net.bridge.bridge-nf-call-iptables
+sysctl net.bridge.bridge-nf-call-ip6tables
+
+
+Initialize the cluster (run only on master node):
+----------------------------------------------------
+
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+Set up kubeconfig for the user:
+-------------------------------------
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+export KUBECONFIG=/path/to/cluster-config
+
+export KUBECONFIG=$HOME/.kube/config
+
+
+Install Flannel network plugin (run only on master node):
+----------------------------------------------------------
+
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+
+
+
+Verify the installation:
+-------------------------
+
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+
+Join worker nodes to the cluster:
+-------------------------------------------
+
+Use the kubeadm join command provided by the kubeadm init output on the master node.
+Run this command with sudo on each worker node.
+
+
+------------------------------------------------------------
+
+final version adding
+
+
+------------------------------------
+
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+sudo kubeadm join 172.31.37.65:6443 --token ldz3kh.orbw9x9ohyzu2an3 \
+        --discovery-token-ca-cert-hash sha256:5bfa0998ed7d709d8172757002459321b53d0a80b13b7ae7ded408270b768675
+		
+		
+---------------------------------------------------------------------------------------------------------------------------------		
+-------------------------------------------------------------------------------------------------------------------------------		
+ingress controller
+----------------------------------------
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.0/deploy/static/provider/cloud/deploy.yaml
+
+-------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+
+
+Cluster configuration completed here
+
+-------------------------------------------------------------------------------
+
+
+kubectl edit svc ingress-nginx-controller -n ingress-nginx
+Find the type: LoadBalancer and change it to:
+
+type: NodePort
+
+
+kubectl get svc -n ingress-nginx
+
+kubectl get svc -n ingress-nginx
+NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller             NodePort    10.110.195.152   <none>        80:32051/TCP,443:30991/TCP   5m51s
+ingress-nginx-controller-admission   ClusterIP   10.106.26.247    <none>        443/TCP                      5m51s
+
+
+
+
+Try disabling it temporarily and reapply the Ingress:
+
+kubectl delete validatingwebhookconfiguration ingress-nginx-admission
+
+
+check
+----------------
+
+http://23.22.102.204:31497/
+http://23.22.102.204:31497/app2/index.html
+http://23.22.102.204:31497/app1/index.html
+
+
+		
+------------------------------------------------------------------------------------------
+
+link: https://medium.com/@subhampradhan966/kubeadm-setup-for-ubuntu-24-04-lts-f6a5fc67f0df
+      https://medium.com/@subhampradhan966/kubeadm-setup-for-ubuntu-24-04-lts-f6a5fc67f0df
+
+-------------------------------------------------------------------------------------------
+
+
+kubernetes version update
+
+--------------------------------------------------------
+--------------------------------------------------------
+
+
+
