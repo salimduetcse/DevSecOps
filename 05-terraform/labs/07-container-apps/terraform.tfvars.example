@@ -1,6 +1,0 @@
-location     = "southeastasia"
-student_name = "yourname"
-min_replicas = 1
-max_replicas = 2
-# After pushing to ACR, set:
-# container_image = "youracr.azurecr.io/lab-web:latest"
