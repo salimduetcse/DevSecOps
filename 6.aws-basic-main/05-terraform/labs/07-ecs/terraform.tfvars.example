@@ -1,6 +1,0 @@
-aws_profile  = "aws-basic-lab"
-aws_region   = "ap-southeast-1"
-student_name = "yourname"
-desired_count = 2
-# After pushing to ECR, set:
-# container_image = "123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/devops-lab-yourname-tf-ecs-app:latest"
