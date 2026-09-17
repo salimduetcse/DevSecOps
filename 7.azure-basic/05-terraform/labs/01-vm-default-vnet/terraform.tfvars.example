@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and edit — DO NOT commit terraform.tfvars
+
+location         = "southeastasia"
+student_name     = "yourname"
+vm_size          = "Standard_B1s"
+allowed_ssh_cidr = "YOUR_PUBLIC_IP/32"
+# allowed_http_cidr = "YOUR_PUBLIC_IP/32"  # optional; defaults to allowed_ssh_cidr

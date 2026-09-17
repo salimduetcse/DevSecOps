@@ -1,0 +1,3 @@
+location      = "southeastasia"
+student_name  = "yourname"
+vmss_capacity = 2
